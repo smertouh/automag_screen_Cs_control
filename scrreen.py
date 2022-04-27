@@ -1,4 +1,5 @@
 import win32ui, win32gui, win32con, win32api
+import os
 
 def grab_screen(s):
     hwnd = win32gui.GetDesktopWindow()
