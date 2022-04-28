@@ -25,7 +25,7 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
     server_name = 'Python Control screen shot, dipole magnets and Cs temperature Tango Server'
     device_list = []
 
-    screenshot_time = attribute(label="screenshot_time", dtype=float,
+    screenshottime = attribute(label="screenshot_time", dtype=float,
                             display_level=DispLevel.OPERATOR,
                             access=AttrWriteType.READ_WRITE,
                             unit="s", format="%f",
@@ -50,6 +50,7 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
         self.ug1 = None
         """
         #
+        self.screenshot_time=6.0
         super().init_device()
         """
         self.power_limit_value = self.config.get('power_limit', 50.0)
@@ -58,9 +59,9 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
         automag_screen_Cs_control_TangoServer.device_list.append(self)
         """
 
-    def read_screenshot_time(self):
+    def read_screenshottime(self):
         return self.screenshot_time
-    def write_screenshot_time(self, value):
+    def write_screenshottime(self, value):
         self.screenshot_time = value
 
 
