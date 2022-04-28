@@ -155,9 +155,26 @@ def T_control_init(c):
 def screenshott(c):
 
     now = datetime.datetime.now()
+
+    ss = now.strftime("%Y")
+
+    s0 = "d:\\data\\screenshot\\" + ss
+    if os.path.exists(s0):
+        pass
+    else:
+        os.mkdir(s0)
+
+    ss = now.strftime("%Y-%m")
+    s0 = s0+"\\" + ss
+    if os.path.exists(s0):
+        pass
+    else:
+        os.mkdir(s0)
+
+
     ss = now.strftime("%Y-%m-%d")
 
-    s0 = "d:\\data\\screenshot\\"+ss
+    s0 = s0 + "\\" + ss
     if os.path.exists(s0):
         pass
     else:
@@ -178,23 +195,25 @@ def init_screenshott(c):
         tango_pet12.subscribe_event("ai03", EventType.CHANGE_EVENT, screenshott)
     except tango.DevFailed:
         print("pet12 offline")
-#T_control_init(1)
-mag_on_init(1)
-screenshott(0)
 
-time_lag=0
-while True:
-    time_lag += 1
-    if time_lag>300:
-        time_lag=0
-        screenshott(0)
-    time.sleep(1)
-    try:
-        auto_starter_on = float(vasya_lastshottime.get_property('auto_starter_on')['auto_starter_on'][0])
-        if (auto_starter_on==1):
-            mag_on(1)
-    except:
-        mag_on_init(1)
+if __name__ == "__main__":
+    #T_control_init(1)
+    mag_on_init(1)
+    screenshott(0)
+
+    time_lag=0
+    while True:
+        time_lag += 1
+        if time_lag>300:
+            time_lag=0
+            screenshott(0)
+        time.sleep(1)
+        try:
+            auto_starter_on = float(vasya_lastshottime.get_property('auto_starter_on')['auto_starter_on'][0])
+            if (auto_starter_on==1):
+                mag_on(1)
+        except:
+            mag_on_init(1)
 
 
 

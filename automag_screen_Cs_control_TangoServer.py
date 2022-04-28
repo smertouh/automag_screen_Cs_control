@@ -6,6 +6,9 @@ import numpy
 import tango
 from tango import DispLevel, AttrWriteType, DevState
 from tango.server import attribute, command
+from automag import screenshott
+
+
 
 sys.path.append('../TangoUtils')
 from TangoServerPrototype import TangoServerPrototype
@@ -22,31 +25,14 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
     server_name = 'Python Control screen shot, dipole magnets and Cs temperature Tango Server'
     device_list = []
 
-    anode_power = attribute(label="anode_power", dtype=float,
-                            display_level=DispLevel.OPERATOR,
-                            access=AttrWriteType.READ,
-                            unit="kW", format="%f",
-                            doc="Tetrode anode power")
-
-    anode_power_ok = attribute(label="anode_power_ok", dtype=bool,
-                               display_level=DispLevel.OPERATOR,
-                               access=AttrWriteType.READ,
-                               unit="", format="%s",
-                               doc="Is Tetrode anode power OK")
-
-    output_power = attribute(label="output_power", dtype=float,
-                             display_level=DispLevel.OPERATOR,
-                             access=AttrWriteType.READ,
-                             unit="kW", format="%f",
-                             doc="Tetrode output power")
-
-    power_limit = attribute(label="anode_power_limit", dtype=float,
+    screenshot_time = attribute(label="screenshot_time", dtype=float,
                             display_level=DispLevel.OPERATOR,
                             access=AttrWriteType.READ_WRITE,
-                            unit="kW", format="%f",
-                            doc="Tetrode anode power limit")
+                            unit="s", format="%f",
+                            doc="time to grab screen")
 
     def init_device(self):
+        """
         self.power = 0.0
         self.rf_power = 0.0
         self.power_limit_value = 50.0
@@ -62,141 +48,49 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
         self.ic = None
         self.iscr = None
         self.ug1 = None
+        """
         #
         super().init_device()
+        """
         self.power_limit_value = self.config.get('power_limit', 50.0)
         self.power_limit.set_write_value(self.power_limit_value)
         self.configure_tango_logging()
-        RFPowerTangoServer.device_list.append(self)
+        automag_screen_Cs_control_TangoServer.device_list.append(self)
+        """
 
-    def set_config(self):
-        super().set_config()
-        try:
-            self.device_name = self.get_name()
-            self.set_state(DevState.INIT)
-            self.set_status('Initialization')
-            self.timer = tango.DeviceProxy(self.config.get('timer', 'binp/nbi/timing'))
-            self.adc = tango.DeviceProxy(self.config.get('adc', 'binp/nbi/adc0'))
-            self.dac = tango.DeviceProxy(self.config.get('dac', 'binp/nbi/dac0'))
+    def read_screenshot_time(self):
+        return self.screenshot_time
+    def write_screenshot_time(self, value):
+        self.screenshot_time = value
 
-            self.ia_scale = self.get_scale(self.adc, self.config.get('ia', 'chan15'))
-            self.ea_scale = self.get_scale(self.adc, self.config.get('ea', 'chan16'))
-            self.ua_scale = self.get_scale(self.adc, self.config.get('ua', 'chan1'))
-            self.ic_scale = self.get_scale(self.adc, self.config.get('ic', 'chan22'))
-            self.iscr_scale = self.get_scale(self.adc, self.config.get('iscr', 'chan0'))
-            self.ug1_scale = self.get_scale(self.adc, self.config.get('ug1', 'chan2'))
 
-            self.info('Initialized successfully')
-            self.set_state(DevState.RUNNING)
-            self.set_status('Initialized successfully')
-        except Exception as ex:
-            self.log_exception('Exception initializing')
-            self.set_state(DevState.FAULT)
-            self.set_status('Error initializing')
-            return False
-        return True
 
-    def read_anode_power(self):
-        return self.power
-
-    def read_anode_power_ok(self):
-        return self.power <= self.power_limit_value and self.get_state() == DevState.RUNNING
-
-    def read_output_power(self):
-        return self.rf_power
-
-    def read_power_limit(self):
-        return self.power_limit_value
-
-    def write_power_limit(self, value):
-        self.power_limit_value = value
-        self.config['power_limit'] = value
-
-    def get_scale(self, dp, name):
-        config = dp.get_attribute_config_ex(name)[0]
-        try:
-            coeff = float(config.display_unit)
-        except:
-            coeff = 1.0
-        return coeff
-
-    @command(dtype_out=float)
-    def calculate_anode_power(self):
-        try:
-            if self.get_state() != DevState.RUNNING:
-                self.warning('Server is not initialized')
-                return
-            self.ia = self.adc.read_attribute(self.config.get('ia', 'chan15')).value * self.ia_scale
-            self.ea = self.adc.read_attribute(self.config.get('ea', 'chan16')).value * self.ea_scale
-            self.ua = self.adc.read_attribute(self.config.get('ua', 'chan1')).value * self.ua_scale
-            self.ic = self.adc.read_attribute(self.config.get('ic', 'chan22')).value * self.ic_scale
-            self.iscr = self.adc.read_attribute(self.config.get('iscr', 'chan0')).value * self.iscr_scale
-            self.ug1 = self.adc.read_attribute(self.config.get('ug1', 'chan2')).value * self.ug1_scale
-            if numpy.abs(self.ug1) < 77.0:
-                t = 1.0e-6
-            else:
-                t = numpy.arccos(-77.0 / self.ug1)
-            # a0 = (numpy.sin(t) - t * numpy.cos(t)) / (numpy.pi * (1 - numpy.cos(t)))
-            a0 = (numpy.sin(t) - t * numpy.cos(t))
-            # a1 = (t - numpy.sin(t) * numpy.cos(t)) / (numpy.pi * (1 - numpy.cos(t)))
-            a1 = (t - numpy.sin(t) * numpy.cos(t))
-            i1 = (self.ic - self.iscr) * a1 / a0
-            prf = i1 * self.ua / 2.0
-            self.rf_power = prf
-            self.output_power.set_value(self.rf_power)
-            self.output_power.set_quality(tango.AttrQuality.ATTR_VALID)
-            ptot = self.ea * self.ia
-            pa = ptot - prf
-            self.power = pa
-            self.anode_power.set_value(self.power)
-            self.anode_power.set_quality(tango.AttrQuality.ATTR_VALID)
-            return pa
-        except:
-            self.log_exception('Can not calculate power')
-            self.power = -1.0
-            self.rf_power = -1.0
-            self.output_power.set_value(self.rf_power)
-            self.anode_power.set_value(self.power)
-            self.anode_power.set_quality(tango.AttrQuality.ATTR_INVALID)
-            self.output_power.set_quality(tango.AttrQuality.ATTR_INVALID)
-            return -1.0
-
-    @command(dtype_in=str)
-    def pulse_off(self, pwd):
-        if pwd != OFF_PASSWORD:
-            self.debug('Incorrect password')
-            return
-        n = 0
-        for k in range(12):
-            try:
-                self.timer.write_attribute('channel_enable' + str(k), False)
-            except:
-                n += 1
-        if n > 0:
-            self.log_exception('Pulse off error')
-        else:
-            self.info('Pulse switched off')
 
 
 def looping():
-    global t0
+    global time_lag
     time.sleep(1)
-    for dev in RFPowerTangoServer.device_list:
-        time.sleep(0.001)
+    print(time_lag)
+
+    time.sleep(0.001)
+    try:
+        time_lag += 1
+        if time_lag > 300:
+            time_lag = 0
+            screenshott(0)
         try:
-            time_lag += 1
-            if time_lag > 300:
-                time_lag = 0
-                screenshott(0)
-            try:
-                auto_starter_on = float(vasya_lastshottime.get_property('auto_starter_on')['auto_starter_on'][0])
-                if (auto_starter_on == 1):
-                    mag_on(1)
+            auto_starter_on = float(vasya_lastshottime.get_property('auto_starter_on')['auto_starter_on'][0])
+            if (auto_starter_on == 1):
+                mag_on(1)
         except:
-                mag_on_init(1)
+            mag_on_init(1)
+    except:
+        pass
 
 
-
+time_lag=301
 if __name__ == "__main__":
+    print(1)
+
     automag_screen_Cs_control_TangoServer.run_server(event_loop=looping)
-    # RFPowerTangoServer.run_server()
+    #RFPowerTangoServer.run_server()
