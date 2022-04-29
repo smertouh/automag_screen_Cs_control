@@ -52,6 +52,44 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
                                doc="magnets are on")
 
 
+    def mag_on(self,c):
+        #adc_device=self.adc_device
+        #vasya_lastshottime=self.vasya_lastshottime
+        elapsed = 10#adc_device.Elapsed
+
+        Tstart = float(self.T_start)
+        Tstop = float(self.T_stop)
+        Mag_status = float(self.Mag_status)
+        Screen_shot = float(self.screenshot_time)
+        Screen_shot_stat = self.new_shot_screen
+
+
+        if (elapsed > Tstart):
+            if (elapsed < Tstop):
+                if (Mag_status == 0):
+                    try:
+                        write_mag_on(1)
+                    except:
+                        print("магниты не включились")
+                if (elapsed > Screen_shot):
+                    try:
+                        if (Screen_shot_stat == True):
+                            screenshott(1)
+                            self.new_shot=False
+                    except:
+                        print("screenshot failed")
+        if (elapsed > Tstop):
+            if (Screen_shot_stat == False):
+                self.new_shot_screen=True
+            if (Mag_status == 1):
+                try:
+                    write_mag_on(0)
+                except:
+                    print("не удалось выключить магниты")
+
+        return 1
+
+
     def init_device(self):
         """
         self.power = 0.0
@@ -76,6 +114,10 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
         self.T_start=1
         self.auto_starter_on=0
         self.Mag_status=0
+        self.new_shot_mag=True
+        self.new_shot_screen = True
+        #self.adc_device = tango.DeviceProxy("binp/nbi/adc0")
+        #self.vasya_lastshottime = tango.AttributeProxy("test/nbi/vasya/lastshottime")
         super().init_device()
         """
         self.power_limit_value = self.config.get('power_limit', 50.0)
