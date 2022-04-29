@@ -30,6 +30,27 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
                             access=AttrWriteType.READ_WRITE,
                             unit="s", format="%f",
                             doc="time to grab screen")
+    autostarteron = attribute(label="start_magnets", dtype=bool,
+                               display_level=DispLevel.OPERATOR,
+                               access=AttrWriteType.READ_WRITE,
+                               unit="", format="%s",
+                               doc="1 - enable magnets control, 0 - disable")
+    Tstart = attribute(label="magnets_on_time", dtype=float,
+                            display_level=DispLevel.OPERATOR,
+                            access=AttrWriteType.READ_WRITE,
+                            unit="s", format="%f",
+                            doc="time from pulse begin when magnets turn on")
+    Tstop = attribute(label="magnets_off_time", dtype=float,
+                            display_level=DispLevel.OPERATOR,
+                            access=AttrWriteType.READ_WRITE,
+                            unit="s", format="%f",
+                            doc="time from pulse begin when magnets turn off")
+    Magstatus= attribute(label="magnets on or off", dtype=bool,
+                               display_level=DispLevel.OPERATOR,
+                               access=AttrWriteType.READ,
+                               unit="", format="%s",
+                               doc="magnets are on")
+
 
     def init_device(self):
         """
@@ -51,6 +72,10 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
         """
         #
         self.screenshot_time=6.0
+        self.T_stop=10
+        self.T_start=1
+        self.auto_starter_on=0
+        self.Mag_status=0
         super().init_device()
         """
         self.power_limit_value = self.config.get('power_limit', 50.0)
@@ -63,6 +88,23 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
         return self.screenshot_time
     def write_screenshottime(self, value):
         self.screenshot_time = value
+    def read_Tstart(self):
+        return self.T_start
+    def write_Tstart(self, value):
+        self.T_start = value
+    def read_Tstop(self):
+        return self.T_stop
+    def write_Tstop(self, value):
+        self.T_stop = value
+
+    def read_Magstatus(self):
+        self.Mag_status=self.auto_starter_on
+        return self.Mag_status==1
+    def read_autostarteron(self):
+        return self.auto_starter_on==1
+    def write_autostarteron(self, value):
+        self.auto_starter_on = value
+
 
 
 
