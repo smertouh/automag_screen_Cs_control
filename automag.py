@@ -8,6 +8,7 @@ from tango.constants import ALL_EVENTS
 import datetime
 import scrreen
 import os
+import socket
 
 
 
@@ -157,11 +158,22 @@ def screenshott(c):
     now = datetime.datetime.now()
 
     ss = now.strftime("%Y")
+    pcname=str(socket.gethostname())
 
-    s0 = "d:\\data\\screenshot\\" + ss
+
+    if os.path.exists("d:\\data\\screenshot\\" +pcname):
+        pass
+    else:
+        print("d:\\data\\screenshot\\" +pcname)
+        os.mkdir("d:\\data\\screenshot\\" +pcname)
+
+
+    s0 = "d:\\data\\screenshot\\" +pcname +"\\"+ ss
+
     if os.path.exists(s0):
         pass
     else:
+        print(s0)
         os.mkdir(s0)
 
     ss = now.strftime("%Y-%m")
@@ -200,7 +212,10 @@ if __name__ == "__main__":
     #T_control_init(1)
     mag_on_init(1)
     screenshott(0)
-
+    mag1_start = tango.AttributeProxy("binp/nbi/magnet1/output_state")
+    mag2_start = tango.AttributeProxy("binp/nbi/magnet2/output_state")
+    qmag1_start = tango.AttributeProxy("binp/nbi/magnet3/output_state")
+    qmag2_start = tango.AttributeProxy("binp/nbi/magnet4/output_state")
     time_lag=0
     while True:
         time_lag += 1
