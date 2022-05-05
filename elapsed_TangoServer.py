@@ -36,13 +36,23 @@ class elapsed_TangoServer(TangoServerPrototype):
                                unit="", format="%s",
                                doc="1/0")
 
+    Shot_id = attribute(label="Shot_id", dtype=float,
+                             display_level=DispLevel.OPERATOR,
+                             access=AttrWriteType.READ_WRITE,
+                             unit="", format="%s",
+                             doc="Shot_id")
+
 
     def init_device(self):
         self.elapsed_v=0
         self.auto_output_state_v=0
+        self.shotid=0
         super().init_device()
 
-
+    def read_Shot_id(self):
+        return self.shotid
+    def write_Shot_id(self, value):
+        self.shotid = value
     def read_elapsed(self):
         return self.elapsed_v
     def write_elapsed(self, value):
@@ -65,6 +75,7 @@ def looping():
     print(time_lag)
     if time_lag>120:
         time_lag=0
+        adc_device.write_attribute("Shot_id", (adc_device.read_attribute("Shot_id").value+1))
     else:
         time_lag+=0.1
     adc_device.write_attribute("elapsed",time_lag)

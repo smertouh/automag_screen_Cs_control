@@ -86,7 +86,7 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
         else:
 
             elapsed = time.time()-self.last_shot_time
-            print(elapsed)
+            #print(elapsed)
 
             #print(self.last_shot_time)
         Tstart = float(self.T_start)
