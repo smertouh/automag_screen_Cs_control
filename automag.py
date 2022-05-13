@@ -195,7 +195,7 @@ def screenshott(c):
     s=s0+"\\screen_"+ss+".png"
     scrreen.grab_screen(s)
     #time.sleep(5)
-    return 1
+    return s
 
 def init_screenshott(c):
 

@@ -1,7 +1,7 @@
 import logging
 import sys
 import time
-
+import os.path
 import numpy
 import tango
 from tango import DispLevel, AttrWriteType, DevState
@@ -169,10 +169,10 @@ class automag_screen_Cs_control_TangoServer(TangoServerPrototype):
 
 
 
-
+sizeS=0
 
 def looping():
-    global time_lag,dt
+    global time_lag,dt,sizeS
     time.sleep(dt)
     #print(time_lag)
 
@@ -180,9 +180,15 @@ def looping():
     for dev in automag_screen_Cs_control_TangoServer.device_list:
         try:
             time_lag += dt
-            if time_lag > 300:
+            if time_lag > 3:
                 time_lag = 0
-                screenshott(0)
+                fpath=screenshott(0)
+                if abs(sizeS-(os.path.getsize(fpath)))<5000:
+                    os.remove(fpath)
+                    print("повтор!")
+                else:
+                    sizeS = (os.path.getsize(fpath))
+                    print("5мин "+str(sizeS))
             try:
                 auto_starter_on = dev.auto_starter_on#float(vasya_lastshottime.get_property('auto_starter_on')['auto_starter_on'][0])
                 if (auto_starter_on == 1):
