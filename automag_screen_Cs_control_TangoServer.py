@@ -180,7 +180,7 @@ def looping():
     for dev in automag_screen_Cs_control_TangoServer.device_list:
         try:
             time_lag += dt
-            if time_lag > 3:
+            if time_lag > 300:
                 time_lag = 0
                 fpath=screenshott(0)
                 if abs(sizeS-(os.path.getsize(fpath)))<5000:
